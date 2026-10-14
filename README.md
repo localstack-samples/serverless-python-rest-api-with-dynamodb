@@ -5,8 +5,9 @@ This example demonstrates how to set up LocalStack for a simple REST API built w
 ## Prerequisites
 You need to have the following tools installed.
 
-* LocalStack ([Install](https://localstack.cloud/docs/getting-started/installation/))
-* Serverless ([Install](https://www.serverless.com/framework/docs/getting-started/))
+* A valid [LocalStack for AWS license](https://localstack.cloud/pricing). Your license provides a [`LOCALSTACK_AUTH_TOKEN`](https://docs.localstack.cloud/aws/getting-started/auth-token/) to activate LocalStack.
+* [`lstk`](https://docs.localstack.cloud/aws/developer-tools/running-localstack/lstk/), installed with `npm install -g @localstack/lstk`
+* Node.js 20 or later. `make install` installs Serverless Framework v3 and the [Serverless-LocalStack plugin](https://github.com/localstack/serverless-localstack) locally.
 
 ## What is the Serverless Framework?
 The Serverless Framework provides open source tooling to help you build, compile, and package code for serverless deployment in the cloud. Serverless deployment means that the application makes use of a number of hosted cloud services like AWS Lambda, DynamoDB, etc. instead of long-lived server applications that you manage and operate yourself.
@@ -68,19 +69,19 @@ Below you find the `serverless.yml` for the service. This file defines the requi
 ```yaml
 service: serverless-python-rest-api-with-dynamodb
 
-frameworkVersion: ">=1.1.0 <=2.50.0"
+frameworkVersion: "3"
 
 provider:
   name: aws
-  runtime: python3.8
+  runtime: python3.11
   environment:
-    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    DYNAMODB_TABLE: ${self:service}-${sls:stage}
   iamRoleStatements:
     - Effect: Allow
       Action:
         - dynamodb:Query
         - ...
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+      Resource: "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
 
 functions:
   create:
@@ -172,13 +173,17 @@ else:
 
 Start LocalStack by running
 ```bash
-localstack start
+export LOCALSTACK_AUTH_TOKEN=<your-auth-token>
+make start
 ```
 
 Then to deploy the endpoint simply run
 ```bash
-serverless deploy --stage local
+make install
+make deploy
 ```
+
+`make deploy` runs `npx serverless deploy --stage local`.
 
 The expected result should be similar to:
 
@@ -227,7 +232,7 @@ You can create, retrieve, update, or delete todos with the following commands:
 ### Create a Todo
 
 ```bash
-curl -X POST http://localhost:4566/restapis/XXXXXXXXXX/local/_user_request_/todos --data '{ "text": "Integrate LocalStack with Serverless" }'
+curl -X POST http://localhost:4566/restapis/XXXXXXXXXX/local/_user_request_/todos -H 'Content-Type: application/json' --data '{ "text": "Integrate LocalStack with Serverless" }'
 ```
 
 Example output:
@@ -262,7 +267,7 @@ Example Result:
 
 ```bash
 # Replace the <id> part with a real id from your todos table
-curl -X PUT http://localhost:4566/restapis/XXXXXXXXXX/local/_user_request_/todos/<id> --data '{ "text": "Integrate LocalStack with Serverless", "checked": true }'
+curl -X PUT http://localhost:4566/restapis/XXXXXXXXXX/local/_user_request_/todos/<id> -H 'Content-Type: application/json' --data '{ "text": "Integrate LocalStack with Serverless", "checked": true }'
 ```
 
 Example Result:
@@ -279,10 +284,14 @@ curl -X DELETE http://localhost:4566/restapis/XXXXXXXXXX/local/_user_request_/to
 
 No output
 
+### Test the API
+
+`make test` creates, reads, lists, updates and deletes a todo, and fails if any step returns an unexpected response.
+
 ## Remove the service
 To remove the service simply run
 ```
-serverless remove --stage local
+make remove
 ```
 
 When re-deploying the service to LocalStack, you may run into the following issue. 
@@ -292,7 +301,7 @@ When re-deploying the service to LocalStack, you may run into the following issu
   The serverless deployment bucket "serverless-python-rest-api-with-dynamodb-local-none-b971536a" does not exist. Create it manually if you want to reuse the CloudFormation stack "serverless-python-rest-api-with-dynamodb-local", or delete the stack if it is no longer required.
 ```
 
-In this case, simply restart the LocalStack Docker container (`ctrl`+`C` and `localstack start`).
+In this case, simply restart the LocalStack Docker container (`lstk stop` and `lstk start`).
 
 ## Contributing
 If you run into any issues, please [create an issue](https://github.com/localstack/serverless-python-rest-api-with-dynamodb/issues/new) or, even better, [submit a pull request](https://github.com/localstack/serverless-python-rest-api-with-dynamodb/pulls). 

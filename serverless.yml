@@ -1,12 +1,12 @@
 service: serverless-python-rest-api-with-dynamodb
 
-frameworkVersion: ">=1.1.0 <=2.50.0"
+frameworkVersion: "3"
 
 provider:
   name: aws
-  runtime: python3.8
+  runtime: python3.11
   environment:
-    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    DYNAMODB_TABLE: ${self:service}-${sls:stage}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -16,7 +16,7 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+      Resource: "arn:aws:dynamodb:${aws:region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
 
 functions:
   create:

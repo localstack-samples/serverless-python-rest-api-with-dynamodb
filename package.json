@@ -5,6 +5,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "serverless-localstack": "^0.4.32"
+    "serverless": "^3.40.0",
+    "serverless-localstack": "^1.4.0"
   }
 }
